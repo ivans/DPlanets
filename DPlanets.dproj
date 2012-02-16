@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6AED740E-9CAC-4FA4-A190-FBD6C6ABA279}</ProjectGuid>
+    <Target>Executable</Target>
+    <IncrementalLinking>true</IncrementalLinking>
+    <UseDefaultCompiler>true</UseDefaultCompiler>
+    <Compiler>DMD</Compiler>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug</OutputPath>
+    <ObjectsDirectory>obj/Debug</ObjectsDirectory>
+    <OutputName>DPlanets</OutputName>
+    <ExtraCompilerArguments>-I/home/ivan/Programs/Dev/D/imports</ExtraCompilerArguments>
+    <ExtraLinkerArguments>-L-lglfw -L-lGLU -L-lGL</ExtraLinkerArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release</OutputPath>
+    <ObjectsDirectory>obj/Release</ObjectsDirectory>
+    <OutputName>DPlanets</OutputName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Unittest|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Unittest</OutputPath>
+    <ObjectsDirectory>obj/Unittest</ObjectsDirectory>
+    <ExtraCompilerArguments>-unittest </ExtraCompilerArguments>
+    <OutputName>DPlanets</OutputName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="planets.d">
+      <LastGenOutput>/home/ivan/Projects/Dlanguage/Myprojects/opengl/DPlanets/obj/Debug/planets.o</LastGenOutput>
+    </Compile>
+    <Compile Include="util.d">
+      <LastGenOutput>/home/ivan/Projects/Dlanguage/Myprojects/opengl/DPlanets/obj/Debug/util.o</LastGenOutput>
+    </Compile>
+  </ItemGroup>
+</Project>
