@@ -418,7 +418,7 @@ void registerCallbacks()
 
   glfwEnable( GLFW_KEY_REPEAT );
   glfwEnable( GLFW_STICKY_KEYS );
-  glfwSwapInterval( 0 );
+  glfwSwapInterval( 1 );
 }
 
 extern(C) void mouseWheelFunc(int pos)
