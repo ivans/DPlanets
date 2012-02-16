@@ -9,9 +9,7 @@ private
   import std.math, std.random;
 }
 
-//pragma(lib,"glfwdll.lib");
-//pragma(lib,"opengl32.lib");
-//pragma(lib,"glu32.lib");
+alias double ftype;
 
 int frames, width, height, origW, origH;
 
@@ -23,9 +21,9 @@ int mouseWheelPos = 0, mouseWheelDelta = 0;
 GLFWvidmode desktopMode;
 int clearscreen = true;
 
-real distP1_PN;
+ftype distP1_PN;
 
-real G = 6.6742e-11; // m^3/kgs^2
+ftype G = 6.6742e-11; // m^3/kgs^2
 
 static this()
 {
@@ -36,7 +34,7 @@ static this()
 double t;
 int x, y;
 int centerPlanet = 0;
-real time = 0;
+ftype time = 0;
 int currentWindowType = GLFW_WINDOW;
 GLUquadricObj* sphereObj;
 
@@ -45,15 +43,15 @@ Planet[] planets;
 class Planet
 {
 	char[] name;
-  real m = 1;			//kg
-  real x=0,y=0,z=0;		//m
-  real vx=0,vy=0,vz=0;	//m/s
-  real r=1;			//m
-  static real dt = 64; //s
+  ftype m = 1;			//kg
+  ftype x=0,y=0,z=0;		//m
+  ftype vx=0,vy=0,vz=0;	//m/s
+  ftype r=1;			//m
+  static ftype dt = 64; //s
   static bool showOldPos = false;
   
   int currentPos = 0;
-  real[3][1000] oldPos;
+  ftype[3][1000] oldPos;
   
   void initOldPos()
   {
@@ -63,7 +61,7 @@ class Planet
     }
   }
   
-  this(char[] name, real m, real x, real y, real z, real vx, real vy, real vz, real r)
+  this(char[] name, ftype m, ftype x, ftype y, ftype z, ftype vx, ftype vy, ftype vz, ftype r)
   {
     initOldPos();
     this.name = name.dup;
@@ -92,14 +90,14 @@ class Planet
     debug writeln("Function == ", functionType);
   }
   
-  real GetF(Planet pl)
+  ftype GetF(Planet pl)
   {
-    real dx = pl.x - this.x;
-    real dy = pl.y - this.y;
-    real dz = pl.z - this.z;
-    real dist_sq = dx*dx + dy*dy + dz*dz;
-    real dist = sqrt(dist_sq);
-    real sila;
+    ftype dx = pl.x - this.x;
+    ftype dy = pl.y - this.y;
+    ftype dz = pl.z - this.z;
+    ftype dist_sq = dx*dx + dy*dy + dz*dz;
+    ftype dist = sqrt(dist_sq);
+    ftype sila;
     switch(functionType)
     {
       case 0: sila = G * (this.m * pl.m)/(dist_sq); break;
@@ -150,8 +148,8 @@ class Planet
 	  default:
 			throw new Exception("aaA");
     }
-    real a = sila / this.m;
-    real dv = a * dt;
+    ftype a = sila / this.m;
+    ftype dv = a * dt;
 
     this.vx += dv * dx / dist;
     this.vy += dv * dy / dist;
@@ -197,7 +195,7 @@ class Planet
     else
     {
       //debug writefln(" tocka");
-      real r2 = r;
+      ftype r2 = r;
       while(r2 / dist(x,y,z,ociste.x+planets[centerPlanet].x,ociste.y+planets[centerPlanet].y,ociste.z+planets[centerPlanet].z) < 0.001)
       {
         r2 *= 2;
@@ -271,12 +269,12 @@ Planet[] remove(ref Planet[] array, ulong index)
   return array2;
 }
 
-real dist(real x1, real y1, real z1, real x2, real y2,real z2)
+ftype dist(ftype x1, ftype y1, ftype z1, ftype x2, ftype y2,ftype z2)
 {
   return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)+(z1-z2)*(z1-z2));
 }
 
-real dist(Planet a, Planet b)
+ftype dist(Planet a, Planet b)
 {
   return sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)+(a.z-b.z)*(a.z-b.z));
 }
@@ -544,9 +542,9 @@ extern(C) void characterCallback(int character, int state)
 
 struct Tocka 
 {
-	real x;
-	real y;
-	real z;
+	ftype x;
+	ftype y;
+	ftype z;
 }
 Tocka glediste = {0,0,0};
 Tocka ociste = {0, 0 , 1.6e10};

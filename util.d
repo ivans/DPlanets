@@ -11,12 +11,13 @@ class array(T)
 	}
 }
 
-alias array!(real) newRealArray;
-alias array!(real[]) newRealArrayArray;
+alias double ftype;
+alias array!(ftype) newftypeArray;
+alias array!(ftype[]) newftypeArrayArray;
 
 class Quaternion
 {
-  static Quaternion opCall(real aa1=0, real aa2=0, real aa3=0, real aa4=0)
+  static Quaternion opCall(ftype aa1=0, ftype aa2=0, ftype aa3=0, ftype aa4=0)
   {
     Quaternion q = new Quaternion();
     q.a1 = aa1;
@@ -46,9 +47,9 @@ class Quaternion
     );
     return mulres;
   }
-  static Quaternion makeRotation(real angle, real x, real y, real z)
+  static Quaternion makeRotation(ftype angle, ftype x, ftype y, ftype z)
   {
-    real sinus = sin(0.5*angle);
+    ftype sinus = sin(0.5*angle);
     q.set(cos(0.5*angle), sinus*x, sinus*y, sinus*z);
     return q;
   }
@@ -58,14 +59,14 @@ class Quaternion
     conjQ.set(this.a1,-this.a2,-this.a3,-this.a4);
     return conjQ;
   }
-  void set(real aa1, real aa2, real aa3, real aa4)
+  void set(ftype aa1, ftype aa2, ftype aa3, ftype aa4)
   {
     this.a1 = aa1;
     this.a2 = aa2;
     this.a3 = aa3;
     this.a4 = aa4;
   }
-  void setrot(real aa2, real aa3, real aa4)
+  void setrot(ftype aa2, ftype aa3, ftype aa4)
   {
     this.a1 = 0;
     this.a2 = aa2;
@@ -78,12 +79,12 @@ class Quaternion
     s.writefln("[", a1, ", ", a2, ", ", a3, ", ", a4,"]");
   }
 
-  real[] getPoint()
+  ftype[] getPoint()
   {
-    return newRealArray[a2,a3,a4];
+    return newftypeArray[a2,a3,a4];
   }
 
-  static void rotate(ref real x, ref real y, ref real z, real Ra, real Rx, real Ry, real Rz)
+  static void rotate(ref ftype x, ref ftype y, ref ftype z, ftype Ra, ftype Rx, ftype Ry, ftype Rz)
   {
     p.setrot(x,y,z);
     q = Quaternion.makeRotation(Ra,Rx,Ry,Rz);
@@ -98,7 +99,7 @@ class Quaternion
     return std.string.format("(%s,%s,%s,%s)",a1,a2,a3,a4);
   }
   
-  void rotate(ref real x, ref real y, ref real z)
+  void rotate(ref ftype x, ref ftype y, ref ftype z)
   {
     p.setrot(x,y,z);
     q = this;
@@ -113,11 +114,11 @@ class Quaternion
     return Quaternion(-a1,-a2,-a3,-a4);
   }
 
-  static Quaternion slerp(Quaternion from, Quaternion to, real t)  
+  static Quaternion slerp(Quaternion from, Quaternion to, ftype t)  
   {
     Quaternion p = from;
     
-    real cosom = from.a1*to.a1 + from.a2*to.a2 + from.a3*to.a3 + from.a4*to.a4;
+    ftype cosom = from.a1*to.a1 + from.a2*to.a2 + from.a3*to.a3 + from.a4*to.a4;
 
     Quaternion q = Quaternion();
     Quaternion result = Quaternion();
@@ -135,18 +136,18 @@ class Quaternion
       q = to;
     }
   
-    real sclp, sclq;
-    if ((1.0 - cosom) > cast(real)0.0001)
+    ftype sclp, sclq;
+    if ((1.0 - cosom) > cast(ftype)0.0001)
     {
-      real omega, sinom;
+      ftype omega, sinom;
       omega = acos( cosom );
       sinom = sin( omega );
-      sclp  = sin( (cast(real)1.0 - t) * omega ) / sinom;
+      sclp  = sin( (cast(ftype)1.0 - t) * omega ) / sinom;
       sclq  = sin( t * omega ) / sinom;
     }
     else
     {
-      sclp = cast(real)1.0 - t;
+      sclp = cast(ftype)1.0 - t;
       sclq = t;
     }
 
@@ -160,7 +161,7 @@ class Quaternion
   static Quaternion p, q, mulres, conjQ;
   union
   {
-    struct {real a1, a2, a3, a4;}
-    real[4] data;
+    struct {ftype a1, a2, a3, a4;}
+    ftype[4] data;
   }
 }
