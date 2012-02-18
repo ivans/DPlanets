@@ -38,5 +38,10 @@
     <Compile Include="util.d">
       <LastGenOutput>/home/ivan/Projects/Dlanguage/Myprojects/opengl/DPlanets/obj/Debug/util.o</LastGenOutput>
     </Compile>
+    <Compile Include="planetsgen.d" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="planets.dat" />
+    <None Include="izlaz.dat" />
   </ItemGroup>
 </Project>
