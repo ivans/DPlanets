@@ -9,8 +9,6 @@ private {
 	import std.math, std.random;
 }
 
-alias real ftype;
-
 int frames, width, height, origW, origH;
 
 int mouseX = 100, mouseY = 100;
@@ -203,7 +201,7 @@ class Planet {
 
 	static void Colide(ref Planet[] planets) {
 		bool promjena;
-		ulong toRemove = -1;
+		long toRemove = 0L;
 		do {
 			promjena = false;
 			glavnapetlja:
@@ -224,15 +222,15 @@ class Planet {
 					}
 				}
 			}
-			if (toRemove >= 0) {
-				planets.remove(toRemove);
-				toRemove = -1;
+			if (promjena == true) {
+				synchronized (syncO) { planets.remove(toRemove); }
 			}
 		} while(promjena == true);
 	}
 }
 
 Planet[] remove(ref Planet[] array, ulong index) {
+	debug writefln("Removing planet and index=%s", index);
 	Planet[] array2;
   	for(int i=0; i<array.length; i++) {
     	if(i==index) {}
@@ -267,7 +265,7 @@ int main(char[][] args) {
 		ftype m, x, y, vx, vy, r; 
 		planetsData.readf(&name,&m,&x,&y,&vx,&vy,&r);
 		if (!(name is null || m is ftype.nan)) {
-			debug writefln("%s (%s kg), at: (%s, %s), speed: (%s, %s), size: %s", name, m, x, y, vx, vy, r);
+			debug writefln("Planet read from file: %s (%s kg), at: (%s, %s), speed: (%s, %s), size: %s", name, m, x, y, vx, vy, r);
 			auto p = new Planet(cast(string) name, m, x, y, 0 ,vx, vy, 0, r);
 			planets ~= p;
 		}
@@ -305,10 +303,8 @@ int main(char[][] args) {
 	void updateThread() {
 		writeln("Thread starting...");
 		while (running) {
-			//synchronized (syncO) {
-				Planet.Step(planets);
-				Planet.Colide(planets);
-			//}
+			Planet.Step(planets);
+			Planet.Colide(planets);
 			Thread.sleep(0);
 		}
 	}
@@ -323,14 +319,14 @@ int main(char[][] args) {
 	
 			calculateFps();
 	
-			//synchronized(syncO) {
+			synchronized(syncO) {
 				draw();
-			//}
+			}
 	
 			processMouseInput();
 			glfwSwapBuffers();
 	
-			titlestr = std.string.format("Spinning Triangle (%s FPS) + center at %s\0", fps, planets[centerPlanet].name);
+			titlestr = std.string.format("Spinning Triangle (%s FPS) + center at %s, time=%s\0", fps, planets[centerPlanet], t);
 			glfwSetWindowTitle(cast(char*)titlestr.ptr);
 			Thread.sleep(1000);
 			
