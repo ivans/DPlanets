@@ -9,17 +9,17 @@ private {
 	import std.math, std.random;
 }
 
-int frames, width, height, origW, origH;
+__gshared int frames, width, height, origW, origH;
 
-int mouseX = 100, mouseY = 100;
-int mouseXDelta = 0, mouseYDelta = 0;
-bool mouseLeft = false, mouseMiddle = false, mouseRight = false;
-int mouseWheelPos = 0, mouseWheelDelta = 0;
+__gshared int mouseX = 100, mouseY = 100;
+__gshared int mouseXDelta = 0, mouseYDelta = 0;
+__gshared bool mouseLeft = false, mouseMiddle = false, mouseRight = false;
+__gshared int mouseWheelPos = 0, mouseWheelDelta = 0;
 
-GLFWvidmode desktopMode;
-int clearscreen = true;
+__gshared GLFWvidmode desktopMode;
+__gshared int clearscreen = 0;
 
-ftype G = 6.6742e-11; // m^3/kgs^2
+immutable ftype G = 6.6742e-11; // m^3/kgs^2
 
 static this() {
 	origW = width = 1024;
@@ -28,12 +28,12 @@ static this() {
 	syncO = new Object();
 }
 
-double t;
-int x, y;
-int centerPlanet = 0;
-ftype time = 0;
-int currentWindowType = GLFW_WINDOW;
-GLUquadricObj* sphereObj;
+__gshared double t;
+__gshared int x, y;
+__gshared int centerPlanet = 0;
+__gshared ftype time = 0;
+__gshared int currentWindowType = GLFW_WINDOW;
+__gshared GLUquadricObj* sphereObj;
 
 __gshared Planet[] planets;
 __gshared ftype distP1_PN = 1000;
@@ -56,12 +56,13 @@ class Planet {
 	
 	void initOldPos() {
 		for(int i=0; i<oldPos.length; i++) {
-			oldPos[i][] = 0;
+			oldPos[i][0] = x;
+			oldPos[i][1] = y;
+			oldPos[i][2] = z;
 		}
 	}
 
 	this(string name, ftype m, ftype x, ftype y, ftype z, ftype vx, ftype vy, ftype vz, ftype r) {
-		initOldPos();
 		this.name = name;
 		this.m = m;
 		this.x = x;
@@ -71,6 +72,7 @@ class Planet {
 		this.vy = vy;
 		this.vz = vz;
 		this.r = r;
+		initOldPos();
 	}
   
 	string toString() {
@@ -167,23 +169,25 @@ class Planet {
 			}
 			glEnd();
 		}
-		
-		glColor3f(1,1,1);
+
+		glColor3f(1.0f, 1.0f, 1.0f);
 		//debug writef(this.name," ",this.r / dist(x,y,z,ociste.x+planets[centerPlanet].x,ociste.y+planets[centerPlanet].y,ociste.z+planets[centerPlanet].z));
 		if(this.r / dist(x,y,z,ociste.x+planets[centerPlanet].x,ociste.y+planets[centerPlanet].y,ociste.z+planets[centerPlanet].z) > 0.001) {
 			//debug writefln(" kugla");
+			glPushMatrix();
 			glTranslatef(x,y,z);
 			gluSphere(sphereObj,r,10,10);
-			glTranslatef(-x,-y,-z);
+			glPopMatrix();
 		} else {
 			//debug writefln(" tocka");
 			ftype r2 = r;
 			while(r2 / dist(x,y,z,ociste.x+planets[centerPlanet].x,ociste.y+planets[centerPlanet].y,ociste.z+planets[centerPlanet].z) < 0.001) {
 				r2 *= 2;
 			}
+			glPushMatrix();
 			glTranslatef(x,y,z);
 			gluSphere(sphereObj,r2,10,10);
-			glTranslatef(-x,-y,-z);
+			glPopMatrix();
 		}
 	}
 	
@@ -223,7 +227,7 @@ class Planet {
 				}
 			}
 			if (promjena == true) {
-				synchronized (syncO) { planets.remove(toRemove); }
+				planets.remove(toRemove);
 			}
 		} while(promjena == true);
 	}
@@ -278,7 +282,7 @@ int main(char[][] args) {
 	glfwInit();
 	glfwGetDesktopMode(&desktopMode);
 
-	if( !glfwOpenWindow( width, height, 0,0,0,0, 0,0, currentWindowType ) ) {
+	if( !glfwOpenWindow( width, height, 0,0,0,0,16,0, currentWindowType ) ) {
 		glfwTerminate();
 		return 0;
 	}
@@ -301,12 +305,16 @@ int main(char[][] args) {
 	}
 
 	void updateThread() {
-		writeln("Thread starting...");
+		debug writeln("updateThread starting...");
 		while (running) {
-			Planet.Step(planets);
-			Planet.Colide(planets);
-			Thread.sleep(0);
+			for (int i=0; i<100; i++) {
+				Planet.Step(planets);
+				Planet.Colide(planets);
+				Thread.sleep(0);
+				if (!running) break;
+			}
 		}
+		debug writeln("updateThread stoping...");
 	}
 
 	(new Thread(&updateThread)).start();
@@ -316,7 +324,7 @@ int main(char[][] args) {
 		while (running) {
 			t = glfwGetTime();
 			glfwGetMousePos( &x, &y );
-	
+
 			calculateFps();
 	
 			synchronized(syncO) {
@@ -328,8 +336,7 @@ int main(char[][] args) {
 	
 			titlestr = std.string.format("Spinning Triangle (%s FPS) + center at %s, time=%s\0", fps, planets[centerPlanet], t);
 			glfwSetWindowTitle(cast(char*)titlestr.ptr);
-			Thread.sleep(1000);
-			
+
 			running = !glfwGetKey( GLFW_KEY_ESC ) && glfwGetWindowParam( GLFW_OPENED );
 		}
 	} catch (Exception e) {
@@ -340,24 +347,38 @@ int main(char[][] args) {
 	return 0;
 }
 
-void initOpenGL() {
-	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_DEPTH_TEST);
-}
-
 bool allwaysClear = false;
 
 void draw() {
 
-	//  if(clearscreen > 0 || allwaysClear==true) {
-    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//    clearscreen --;
-	//  }
+	void setModelDraw() {
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+	}
+
+	void setPerspective() {
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(45,cast(GLfloat)width/cast(GLfloat)height,0.1f,1e30);
+		gluLookAt (
+		    planets[centerPlanet].x+ociste.x,
+		    planets[centerPlanet].y+ociste.y,
+		    planets[centerPlanet].z+ociste.z,
+		    planets[centerPlanet].x,
+		    planets[centerPlanet].y,
+		    planets[centerPlanet].z, 0.0, 1.0, 0.0
+		);	// ociste x,y,z; glediste x,y,z; up vektor x,y,
+	}
+
+	//if(clearscreen > 0 || allwaysClear==true) {
+		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//clearscreen --;
+	//}
 
 	setPerspective();
 	setModelDraw();
 
+	glPushMatrix();
 	glTranslatef(planets[centerPlanet].x,planets[centerPlanet].y,planets[centerPlanet].z);
 	glBegin(GL_LINES);
 		glColor3f(0.7f,0.3f,0.3f);
@@ -368,7 +389,7 @@ void draw() {
 		glVertex3f(0,-distP1_PN,0);
 		glVertex3f(0,distP1_PN,0);    
 	glEnd();
-	glTranslatef(-planets[centerPlanet].x,-planets[centerPlanet].y,-planets[centerPlanet].z);
+	glPopMatrix();
 
 	foreach(planet; planets) {
 		planet.Draw();
@@ -392,12 +413,6 @@ void registerCallbacks() {
 	glfwSetMousePosCallback(&mousePosFunc);
 	glfwSetMouseButtonCallback(&mouseButtonFunc);
 	glfwSetMouseWheelCallback(&mouseWheelFunc);
-	
-	glfwEnable( GLFW_MOUSE_CURSOR );
-	
-	glfwEnable( GLFW_KEY_REPEAT );
-	glfwEnable( GLFW_STICKY_KEYS );
-	glfwSwapInterval( 1 );
 }
 
 extern(C) void mouseWheelFunc(int pos) {
@@ -433,39 +448,19 @@ extern(C) void mouseButtonFunc(int button, int action) {
 }
 
 extern(C) void windowResize(int w, int h) {
+	debug writeln("windowResize ", w, " ", h);
 	width = w;
 	height = h;
 	glPolygonMode(GL_FRONT, GL_FILL);
 	glPolygonMode(GL_BACK, GL_FILL);
-	
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);			
-	glClearDepth(1.0f);
-	glEnable(GL_DEPTH_TEST);
+
+	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_POINT_SMOOTH);
-	glDrawBuffer(GL_FRONT);
-	
-	setPerspective();
-	setModelDraw();
-}
-
-void setModelDraw() {
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();	 
-}
-
-void setPerspective() {
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(45,cast(GLfloat)width/cast(GLfloat)height,0.1f,1e30);
-	gluLookAt (
-	    planets[centerPlanet].x+ociste.x, 
-	    planets[centerPlanet].y+ociste.y, 
-	    planets[centerPlanet].z+ociste.z, 
-	    planets[centerPlanet].x, 
-	    planets[centerPlanet].y, 
-	    planets[centerPlanet].z, 0.0, 1.0, 0.0
-	);	// ociste x,y,z; glediste x,y,z; up vektor x,y,
+	glEnable(GL_DEPTH_TEST);
+	glfwEnable( GLFW_MOUSE_CURSOR );
+	glfwEnable( GLFW_KEY_REPEAT );
+	glfwEnable( GLFW_STICKY_KEYS );
+	glfwSwapInterval( 1 );
 }
 
 extern(C) void characterCallback(int character, int state) {
@@ -480,6 +475,8 @@ extern(C) void characterCallback(int character, int state) {
 				break;
 			case ' ':
 				Planet.Step(planets);
+				//Planet.Colide(planets);
+				foreach (p; planets) { writeln(p); }
 				break;
 			case 'q':
 				centerPlanet = cast(int)((centerPlanet+1)%planets.length);

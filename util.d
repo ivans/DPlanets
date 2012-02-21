@@ -9,7 +9,7 @@ class array(T) {
 	}
 }
 
-alias float ftype;
+alias double ftype;
 alias array!(ftype) newftypeArray;
 alias array!(ftype[]) newftypeArrayArray;
 
