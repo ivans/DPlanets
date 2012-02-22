@@ -165,7 +165,10 @@ class Planet {
 			glColor3f(0.7f, 0.7f, 0.7f);
 			glBegin(GL_LINES);
 			for(int i=0; i<oldPos.length; i++) {
-				glVertex3f(oldPos[(currentPos+i)%$][0],oldPos[(currentPos+i)%$][1],oldPos[(currentPos+i)%$][2]);
+				glVertex3f(
+					oldPos[(currentPos+i)%$][0]-planets[centerPlanet].x,
+					oldPos[(currentPos+i)%$][1]-planets[centerPlanet].y,
+					oldPos[(currentPos+i)%$][2]-planets[centerPlanet].z);
 			}
 			glEnd();
 		}
@@ -192,18 +195,23 @@ class Planet {
 	}
 	
 	static void Step(Planet[] planets) {
-		foreach(i,planetaA; planets) {
-			foreach(j,planetaB; planets) {
-				if(i!=j) {
-					planetaA.GetF(planetaB);
+		debug writeln("Step...", planets is null);
+		foreach(i,pA; planets) {
+			foreach(j,pB; planets) {
+				if(i!=j && pA !is null && pB !is null) {
+					pA.GetF(pB);
 				}
 			}
-			planetaA.Update();
+		}
+		foreach(p; planets) {
+			if(p !is null && p.m > 0)
+			p.Update();
 		}
 		time += dt;
 	}
 
 	static void Colide(ref Planet[] planets) {
+		debug writeln("Coliding...");
 		bool promjena;
 		long toRemove = 0L;
 		do {
@@ -211,7 +219,7 @@ class Planet {
 			glavnapetlja:
 			foreach(i,pA; planets) {
 				foreach(j,pB; planets) {
-					if(i!=j) {
+					if(i!=j && pA !is null && pB !is null) {
 						if(dist(pA,pB) <= (pA.r + pB.r)) {
 							pA.vx = (pA.m*pA.vx + pB.m*pB.vx)/(pA.m+pB.m);
 							pA.vy = (pA.m*pA.vy + pB.m*pB.vy)/(pA.m+pB.m);
@@ -233,17 +241,20 @@ class Planet {
 	}
 }
 
+// TODO ovo bolje implementirati
 Planet[] remove(ref Planet[] array, ulong index) {
-	debug writefln("Removing planet and index=%s", index);
-	Planet[] array2;
-  	for(int i=0; i<array.length; i++) {
-    	if(i==index) {}
-    	else {
-      		array2 ~= array[i];
-    	}
-  	}
-	array = array2;
-	return array2;
+	debug writefln("Removing planet @ index=%s", index);
+	array[index] = null;
+	return array;
+//	Planet[] array2;
+//  	for(int i=0; i<array.length; i++) {
+//    	if(i==index) {}
+//    	else {
+//      		array2 ~= array[i];
+//    	}
+//  	}
+//	array = array2;
+//	return array2;
 }
 
 ftype dist(ftype x1, ftype y1, ftype z1, ftype x2, ftype y2,ftype z2) {
@@ -309,7 +320,9 @@ int main(char[][] args) {
 		while (running) {
 			for (int i=0; i<100; i++) {
 				Planet.Step(planets);
-				Planet.Colide(planets);
+				synchronized(syncO) {
+					Planet.Colide(planets);
+				}
 				Thread.sleep(0);
 				if (!running) break;
 			}
@@ -392,7 +405,9 @@ void draw() {
 	glPopMatrix();
 
 	foreach(planet; planets) {
-		planet.Draw();
+		if (planets !is null) {
+			planet.Draw();
+		}
 	}
 }
 
@@ -479,6 +494,9 @@ extern(C) void characterCallback(int character, int state) {
 				foreach (p; planets) { writeln(p); }
 				break;
 			case 'q':
+				centerPlanet = cast(int)((centerPlanet-1)%planets.length);
+				break;
+			case 'w':
 				centerPlanet = cast(int)((centerPlanet+1)%planets.length);
 				break;
 			case 'o':
