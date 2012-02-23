@@ -79,7 +79,7 @@ class Planet {
 		return format("%s: (%s, %s, %s), (%s, %s, %s), %s", name, x, y, z, vx, vy, vz, m);
 	}
 
-	static int functionType = 0;
+	__gshared static int functionType = 0;
 
 	static void nextFunction() {
 		functionType = (functionType+1)%3;
@@ -98,50 +98,21 @@ class Planet {
 		ftype sila;
 		switch(functionType) {
 			case 0: 
-				sila = G * (this.m * pl.m)/(dist_sq); 
+				sila = G * this.m * pl.m/(dist_sq); 
 				break;
-			case 1: 
-				sila = G * (this.m * pl.m)/(dist); 
-				break;
-			case 2: 
-				if(dist>(pl.r+this.r)*50) {
-				}
-				if(dist>(pl.r+this.r)*30) {
-					sila = G*(this.m * pl.m)/(sqrt(dist));
-				} else if(dist>(pl.r+this.r)*20) {
-					sila = G*(this.m * pl.m)/(dist);
-				} else if(dist>(pl.r+this.r)*14) {
-					sila = G*(this.m * pl.m)/(dist_sq);
-				} else if(dist>(pl.r+this.r)*9) {
-					sila = 0;
-					vx *= 0.99;
-					vy *= 0.99;
-					vz *= 0.99;          
-				} else if(dist>(pl.r+this.r)*8) {
-					sila = 0;
-					vx *= 1.0001;
-					vy *= 1.0001;
-					vz *= 1.0001;          
-				} else if(dist>(pl.r+this.r)*4) {
-					sila = -G*(this.m * pl.m)/(dist);
-				} else {
-					sila = -G*(this.m * pl.m)/(dist);
-				}
+			case 1:
+				sila = G * this.m * pl.m/(dist); 
 				break;
 			default:
 				throw new Exception("aaA");
 		}
 
-		ftype a = sila / this.m;
+		ftype a = sila / abs(this.m);
 		ftype dv = a * dt;
 
 		this.vx += dv * dx / dist;
 		this.vy += dv * dy / dist;
 		this.vz += dv * dz / dist;
-		
-		if(this.vx is ftype.nan) {
-			writeln("AAAAAAAAAAAAAAAAA");
-		}
 
 		return sila;
 	}
@@ -164,16 +135,18 @@ class Planet {
 		if(showOldPos == true) {
 			glColor3f(0.7f, 0.7f, 0.7f);
 			glBegin(GL_LINES);
-			for(int i=0; i<oldPos.length; i++) {
-				glVertex3f(
-					oldPos[(currentPos+i)%$][0]-planets[centerPlanet].x,
-					oldPos[(currentPos+i)%$][1]-planets[centerPlanet].y,
-					oldPos[(currentPos+i)%$][2]-planets[centerPlanet].z);
+			for(int i=1; i<oldPos.length; i++) {
+				glVertex3f(oldPos[(currentPos+i-1)%$][0], oldPos[(currentPos+i-1)%$][1], oldPos[(currentPos+i-1)%$][2]);
+				glVertex3f(oldPos[(currentPos+i)%$][0], oldPos[(currentPos+i)%$][1], oldPos[(currentPos+i)%$][2]);
 			}
 			glEnd();
 		}
 
-		glColor3f(1.0f, 1.0f, 1.0f);
+		if (m < 0) 
+			glColor3f(0.5f, 1.0f, 0.5f);
+		else
+			glColor3f(1.0f, 0.5f, 0.5f);
+
 		//debug writef(this.name," ",this.r / dist(x,y,z,ociste.x+planets[centerPlanet].x,ociste.y+planets[centerPlanet].y,ociste.z+planets[centerPlanet].z));
 		if(this.r / dist(x,y,z,ociste.x+planets[centerPlanet].x,ociste.y+planets[centerPlanet].y,ociste.z+planets[centerPlanet].z) > 0.001) {
 			//debug writefln(" kugla");
@@ -204,57 +177,45 @@ class Planet {
 			}
 		}
 		foreach(p; planets) {
-			if(p !is null && p.m > 0)
-			p.Update();
+			if(p !is null) {
+				p.Update();
+			}
 		}
 		time += dt;
 	}
 
 	static void Colide(ref Planet[] planets) {
 		debug writeln("Coliding...");
-		bool promjena;
-		long toRemove = 0L;
-		do {
-			promjena = false;
-			glavnapetlja:
-			foreach(i,pA; planets) {
-				foreach(j,pB; planets) {
-					if(i!=j && pA !is null && pB !is null) {
-						if(dist(pA,pB) <= (pA.r + pB.r)) {
-							pA.vx = (pA.m*pA.vx + pB.m*pB.vx)/(pA.m+pB.m);
-							pA.vy = (pA.m*pA.vy + pB.m*pB.vy)/(pA.m+pB.m);
-							pA.vz = (pA.m*pA.vz + pB.m*pB.vz)/(pA.m+pB.m);
-							pA.m += pB.m;
-							// formula za raččunanje radiusa (uračunati gustoću)
-							//pA.r = pow(pow(pA.r,3) + pow(pB.r,3) , 1/3.);
-							toRemove = j;
-							promjena = true;
-							break glavnapetlja;
-						}
+		for(auto i=0; i<planets.length; i++) {
+			auto pA = planets[i];
+			for(auto j=i+1; j<planets.length; j++) {
+				auto pB = planets[j];
+				if(pA !is null && pB !is null) {
+					auto massSum = pA.m+pB.m;
+					if(dist(pA,pB) <= (pA.r + pB.r) && massSum != 0) {
+						pA.vx = (pA.m*pA.vx + pB.m*pB.vx)/massSum;
+						pA.vy = (pA.m*pA.vy + pB.m*pB.vy)/massSum;
+						pA.vz = (pA.m*pA.vz + pB.m*pB.vz)/massSum;
+						pA.m += pB.m;
+						// formula za raččunanje radiusa (uračunati gustoću)
+						//pA.r = pow(pow(pA.r,3) + pow(pB.r,3) , 1/3.);
+						planets.remove(j);
 					}
 				}
 			}
-			if (promjena == true) {
-				planets.remove(toRemove);
-			}
-		} while(promjena == true);
+		}
 	}
 }
 
-// TODO ovo bolje implementirati
-Planet[] remove(ref Planet[] array, ulong index) {
+void remove(ref Planet[] array, ulong index) {
 	debug writefln("Removing planet @ index=%s", index);
-	array[index] = null;
-	return array;
-//	Planet[] array2;
-//  	for(int i=0; i<array.length; i++) {
-//    	if(i==index) {}
-//    	else {
-//      		array2 ~= array[i];
-//    	}
-//  	}
-//	array = array2;
-//	return array2;
+	for (ulong i=array.length-1; i>=1; i--) {
+		if (array[i] !is null) {
+			array[index] = array[i];
+			array.length = array.length - 1L;
+			break;
+		}
+	}
 }
 
 ftype dist(ftype x1, ftype y1, ftype z1, ftype x2, ftype y2,ftype z2) {
@@ -322,6 +283,9 @@ int main(char[][] args) {
 				Planet.Step(planets);
 				synchronized(syncO) {
 					Planet.Colide(planets);
+					while (planets[centerPlanet] is null) {
+						centerPlanet = cast(int) ((centerPlanet + 1) % planets.length);
+					}
 				}
 				Thread.sleep(0);
 				if (!running) break;
